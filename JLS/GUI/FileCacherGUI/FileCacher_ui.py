@@ -25,6 +25,63 @@ class MainWindow(QWidget):
         self.init_ui()
         self.jsonDictCheck(firstLoad=True)
 
+    # ---------------------------------------------------------------------
+    # CUSTOM EVENTS
+    # ---------------------------------------------------------------------
+    # CLOSE
+    def closeEvent(self, event):
+
+        # Get the Latest List and store in a Lictionary.
+        dictFoundNodes = CF.getNodeNameAndPathFromDict(CF.findAllNodeType("filecache"))
+
+        # Create an Ordered Dictionary.
+        # Getting the Dictionary from the JSON File.
+        dictJson = collections.OrderedDict()
+        dictListJson = self.readListOrder()
+        
+        # Taking the [ Key ] / [ Value ] pair from the JSON File and storing it in the Ordered Dictionary.
+        for item in dictListJson:
+                dictJson[item["path"]] = item["name"]
+
+        # Checking to see if there are any file cache nodes that are new and have not been added to the JSON File.
+        # Checking to see if there are any file cache nodes in the JSON File which have been deleted from the Netwrok view.
+        fileCacheNotStored = { k : dictFoundNodes[k] for k in set(dictFoundNodes) - set(dictJson) }
+        deletedNodes = { k : dictJson[k] for k in set(dictJson) - set(dictFoundNodes) }
+
+        if fileCacheNotStored != {} or deletedNodes != {}:
+            dialog = False # hou.ui.displayConfirmation(text="You have Unsaved Changes, do you want to exit with out saving ?", buttons=("YES", "NO"))
+            message = hou.ui.displayMessage(text="You have Unsaved Changes, do you want to save before exiting ?", buttons=("Yes", "No", "Cancel"))
+
+            if message == 0:
+                # Check to see if the fileCachNotFound Dict have any values, If it dose, then update the Dictionary with those values.
+                if fileCacheNotStored != {}:
+                    dictJson.update(fileCacheNotStored)                    
+
+                # Check if the deletedNodes Dict has any values, if it dose, then go into the Json Dict and remove that item.
+                if deletedNodes != {}:
+                    for key, value in deletedNodes.iteritems():
+                        dictJson.pop(key)
+
+                # Converting the Updated Orderd JSON Dict to a list to store its order.
+                lst = CF.dictToList(dictJson)
+
+                # Save the List Dict to a JSON File.
+                # Update the QTList with the list items.
+                self.saveListOrder(lst)
+                self.setListText(lst)
+                event.accept()
+
+            elif message == 1:
+                # This will close the window without Saving.
+                event.accept()
+
+            elif message == 2:
+                # This will cause the Exit event to Stop working.
+                event.ignore()
+        else:
+            # This will close the window as there is no Unsaved Changes.
+            event.accept()
+
     # Creating the UI for the File cache System.
     def init_ui(self):
         
@@ -34,30 +91,46 @@ class MainWindow(QWidget):
         # Setting window titile
         # ---------------------------------------------------------------------
         # self.setGeometry(Qt.AlignCenter, Qt.AlignCenter, Qt.AlignCenter, Qt.AlignCenter)
-        self.setGeometry(200, 200, 720, 600)
+        self.setGeometry(200, 200, 1000, 700)
         self.setWindowTitle("File Cacher")
 
         # ---------------------------------------------------------------------
         # LAYOUTS
         # ---------------------------------------------------------------------
         # <<< ------ LAYOUT HIRACHY ------ >>>
-        # VBOX-MAIN
-        #   HBOX-1 [ Button Layout at the top ]
-        #   HBOX-2 [ Holds the List and read out ]
-        #       VBOX-1 [ List view ]
-        #       VBOX-2 [ Selected Listtime Cache Data ]
+        # vBox-MAIN
+        #   hBox-Buttons [ Button Layout at the top ]
+        #   hBox-Main [ Holds the List and read out ]
+        #       vBox-List [ List view ]
+        #       vBox-Data [ Display Data ]
+        #           hBox-NotSaved [ Nodes Not Saved ]
+        #           hBox-Deleted [ Nodes Deleted ]
+
         # ---------------------------------------------------------------------        
-        vBox = QVBoxLayout()
-        hBox1 = QHBoxLayout()
-        hBox2 = QHBoxLayout()
+        vBoxMain = QVBoxLayout()
+        hBoxButtons = QHBoxLayout()
+        hBoxMain = QHBoxLayout()
+        vBoxList = QVBoxLayout()
+        vBoxData = QVBoxLayout()
+        vBoxNotSaved = QVBoxLayout()
+        vBoxDeleted = QVBoxLayout()
         
-        vBox.addLayout(hBox1)
-        vBox.addLayout(hBox2)        
+        # Add To [ vBoxMain ]
+        vBoxMain.addLayout(hBoxButtons)
+        vBoxMain.addLayout(hBoxMain)
+
+        # Add to [ hBoxMain ]
+        hBoxMain.addLayout(vBoxList)
+        hBoxMain.addLayout(vBoxData)
+
+        # Add to [ vBoxData ]
+        vBoxData.addLayout(vBoxNotSaved)
+        vBoxData.addLayout(vBoxDeleted)
 
         # ---------------------------------------------------------------------
-        # WIDGETS
+        # WIDGETS -  Creation
         # ---------------------------------------------------------------------
-        # Widgets - Horizontal 1 - Buttons
+        # Widgets - [ hBoxButtons ] - Buttons
         self.btn_findAllCacheNds = QPushButton("Find All File Cache Nodes")
         self.btn_findAllCacheNds.setCursor(QCursor(Qt.PointingHandCursor))
         self.btn_findAllCacheNds.setToolTip("This is going to find all File Cache nodes and save them to a JSON File as well as update the existings JSON file if it exists.")
@@ -75,22 +148,63 @@ class MainWindow(QWidget):
         self.chk_bkgrdCache = QCheckBox("Background Cache")
         self.chk_hqeueuCache = QCheckBox("Send To HQeueu")
 
-        # List Widget setup.
+        # Widgets - [ hBoxMain ]_[ vBoxList ] - List
+        self.lblJsonHeader = QLabel()
+        self.lblJsonHeader.setObjectName("lblJson")
+        self.lblJsonHeader.setText("JSON File")
+        self.lblJsonHeader.setAlignment(Qt.AlignCenter)
+
         self.fileCacheListWidget = QListWidget()
-        self.fileCacheListWidget.setAlternatingRowColors(True)
+        self.fileCacheListWidget.setObjectName("lstJson")
+        # self.fileCacheListWidget.setAlternatingRowColors(True)
         self.fileCacheListWidget.setDragDropMode(QAbstractItemView.InternalMove)
         self.fileCacheListWidget.setAcceptDrops(True)
         self.fileCacheListWidget.setDefaultDropAction(Qt.MoveAction)
         self.fileCacheListWidget.setSelectionMode(QAbstractItemView.ExtendedSelection)
 
-        # Add Widgets to their Correnct Box Sections.
-        hBox1.addWidget(self.btn_findAllCacheNds)
-        hBox1.addWidget(self.btn_updateListOrder)
-        hBox1.addWidget(self.btn_cacheAll)
-        hBox1.addWidget(self.btn_cacheSelected)
-        # hBox1.addWidget(self.chk_bkgrdCache)
-        # hBox1.addWidget(self.chk_hqeueuCache)
-        hBox2.addWidget(self.fileCacheListWidget)
+        # [ hBoxMain ]_[ vBoxData ]_[ vBoxNotSaved ] - List
+        self.lblNodesNotSavedHeader = QLabel()
+        self.lblNodesNotSavedHeader.setObjectName("lblNodesNotSaved")
+        self.lblNodesNotSavedHeader.setText("Nodes Not Saved")
+        self.lblNodesNotSavedHeader.setAlignment(Qt.AlignCenter)
+
+        self.notSavedNodesListWidget = QListWidget()
+        self.notSavedNodesListWidget.setObjectName("lstNodesNotSaved")
+        # self.notSavedNodesListWidget.setAlternatingRowColors(True)
+
+        # [ hBoxMain ]_[ vBoxData ]_[ vBoxDeleted ] - List
+        self.lblDeletedNodesHeader = QLabel()
+        self.lblDeletedNodesHeader.setObjectName("lblNodesDeleted")
+        self.lblDeletedNodesHeader.setText("Nodes Deleted")
+        self.lblDeletedNodesHeader.setAlignment(Qt.AlignCenter)
+
+        self.deletedNodesListWidget = QListWidget()
+        self.deletedNodesListWidget.setObjectName("lstDeletedNodes")
+        # self.deletedNodesListWidget.setAlternatingRowColors(True)
+
+
+        # ---------------------------------------------------------------------
+        # WIDGETS - Add Widgets to their Correnct Box Sections.
+        # ---------------------------------------------------------------------
+        # [ hBoxButtons ]
+        hBoxButtons.addWidget(self.btn_findAllCacheNds)
+        hBoxButtons.addWidget(self.btn_updateListOrder)
+        hBoxButtons.addWidget(self.btn_cacheAll)
+        hBoxButtons.addWidget(self.btn_cacheSelected)
+        # hBoxButtons.addWidget(self.chk_bkgrdCache)
+        # hBoxButtons.addWidget(self.chk_hqeueuCache)
+
+        # [ hBoxMain ]_[ vBoxList ]
+        vBoxList.addWidget(self.lblJsonHeader)
+        vBoxList.addWidget(self.fileCacheListWidget)
+
+        # [ hBoxMain ]_[ vBoxData ]_[ vBoxNotSaved ]
+        vBoxNotSaved.addWidget(self.lblNodesNotSavedHeader)
+        vBoxNotSaved.addWidget(self.notSavedNodesListWidget)
+
+        # [ hBoxMain ]_[ vBoxData ]_[ vBoxDeleted ]
+        vBoxDeleted.addWidget(self.lblDeletedNodesHeader)
+        vBoxDeleted.addWidget(self.deletedNodesListWidget)
         
         # ---------------------------------------------------------------------
         # STYLESHEETS
@@ -105,7 +219,7 @@ class MainWindow(QWidget):
         # ---------------------------------------------------------------------
         # SET LAYOUT
         # ---------------------------------------------------------------------
-        self.setLayout(vBox)
+        self.setLayout(vBoxMain)
 
         # ---------------------------------------------------------------------
         # EVENTS
@@ -116,16 +230,16 @@ class MainWindow(QWidget):
         self.btn_cacheAll.clicked.connect(self.cachAll_Clicked)
         self.btn_cacheSelected.clicked.connect(self.cacheSelected_Clicked)
 
-
         # Drop Events
         # self.fileCacheListWidget.connect(self.itemDropped)
-        
+
     # ---------------------------------------------------------------------
     # BUTTON CLICK EVENTS
     # ---------------------------------------------------------------------
 
+    
     # Find All Cache Nodes, Read back from Disk, Call QT List set Function
-    def findAllFilecacheNodes_Clicked(self):        
+    def findAllFilecacheNodes_Clicked(self):
         # This is returning a Dictionary of names and node Paths as well as reading in the JSON file and both are Dictionaries.
         dictFoundNodes = CF.getNodeNameAndPathFromDict(CF.findAllNodeType("filecache"))
 
@@ -175,10 +289,12 @@ class MainWindow(QWidget):
 
     # Updates and dose a check for any New File Cache nodes and any deleted File Cache Nodes and updates the JSON File Acordingly.
     def jsonDictCheck(self, dictFoundNodes = {}, firstLoad = False):
-        # Creating empty list for saving to the JSON File to keep order.
+        # Creating empty list for saving to the JSON File to keep order, Nodes Not Saved and Nodes Deleted.
         # Creating an empty ordered dict for the returned JSON List Dict items.
         # Fetching the JSON Data and Add it to a new List.
         lst = []
+        lstNtSvd = []
+        lstdlt = []
         dictJson = collections.OrderedDict()
         dictListJson = self.readListOrder()
 
@@ -210,6 +326,8 @@ class MainWindow(QWidget):
 
             # Converting the Updated Orderd JSON Dict to a list to store its order.
             lst = CF.dictToList(dictJson)
+            lstNtSvd = CF.dictToList(fileCacheNotStored)
+            lstdlt = CF.dictToList(deletedNodes)
 
             # Enabling the button here if the JSON file exists and has Data.
             self.btn_updateListOrder.setEnabled(True)
@@ -219,6 +337,8 @@ class MainWindow(QWidget):
         elif dictFoundNodes != {}:
             # Converting the Found Nodes Dict to a list to store its order.
             lst = CF.dictToList(dictFoundNodes)
+
+            # This message is for first time Loads and creation of the JSON File.
             hou.ui.displayMessage("This is your First Load.", 
                     title="First JSON Save", severity=hou.severityType.Message, help="All currently found File Cache Nodes have been saved to a JSON file on disk. The file loacation is: $HIP/JSON/ListOrder.")
 
@@ -226,6 +346,8 @@ class MainWindow(QWidget):
         # Update the QTList with the list items.
         self.saveListOrder(lst)
         self.setListText(lst)
+        self.setNotSavedListText(lstNtSvd)
+        self.setDeletedListText(lstdlt)
 
     # This Method populates the QList using a List of Dictionaris.
     def setListText(self, dictList):
@@ -233,16 +355,34 @@ class MainWindow(QWidget):
 
         # Looping through the incoming dictionary and adding it the the listQT List
         for item in dictList:
-            item = "Node: {}    |   Path: {} \n".format(item["name"], item["path"])
-            QListWidgetItem(item, self.fileCacheListWidget)     
+            item = "Node: {}    |   Path: {}".format(item["name"], item["path"])
+            QListWidgetItem(item, self.fileCacheListWidget)    
+
+    # This Method populates the NotSaved Nodes ListWidget using a List of Dictionaris.
+    def setNotSavedListText(self, dictList):
+        self.notSavedNodesListWidget.clear()
+
+        # Looping through the incoming dictionary and adding it the the listQT List
+        for item in dictList:
+            item = "Node: {}".format(item["name"])
+            QListWidgetItem(item, self.notSavedNodesListWidget)
+
+    # This Method populates the Deleted Nodes ListWidget using a List of Dictionaris.
+    def setDeletedListText(self, dictList):
+        self.deletedNodesListWidget.clear()
+
+        # Looping through the incoming dictionary and adding it the the listQT List
+        for item in dictList:
+            item = "Node: {}".format(item["name"])
+            QListWidgetItem(item, self.deletedNodesListWidget)
 
     # This Method Saves a Dictionary to a JSON File.
-    def saveListOrder(self, dictList):        
+    def saveListOrder(self, dictList):
         path = "{}JSON/".format(CF.getHipPath(True))
         CF.saveToJsonFile(dictList, "ListOrder", path)
 
     #  This Method reads a JSON file and returns a Dictionary.
-    def readListOrder(self):        
+    def readListOrder(self):
         path = "{}JSON/".format(CF.getHipPath(True))
         return CF.readFromJsonFile("ListOrder", path)  
 
@@ -282,7 +422,6 @@ class MainWindow(QWidget):
         # This runs foreach item in the Dictionary.
         for path in dictNodesToCache:
             hou.parm("{}/{}".format(path, "execute")).pressButton()
-
 
 # ---------------------------------------------------------------------
 # FUNCTIONS
