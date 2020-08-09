@@ -480,4 +480,3 @@ def run():
     dialog = MainWindow()
     dialog.setParent(hou.qt.floatingPanelWindow(None), Qt.Window)
     dialog.show()
-   
