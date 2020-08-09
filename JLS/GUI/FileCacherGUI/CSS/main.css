@@ -1,4 +1,231 @@
-QWidget {
+/* ---------------------------------------------------------------------------------
+                               MAIN ELEMENTS
+ ---------------------------------------------------------------------------------*/
+QWidget 
+{
     background-color: #202020;
     color: #CCC;
+}
+
+QListWidget
+{
+    border: none;
+    border-color: whitesmoke;
+    padding: 0px;
+    margin: 0px;
+    border-spacing: 0px;
+    color: white;
+    min-height: auto;
+}
+
+QListWidget::item
+{
+    padding: 5px;
+    margin: 0px;
+    border-bottom: 1px solid grey;
+    height: auto;
+}
+
+QListWidget::item:alternate 
+{
+    padding: 5px;
+    margin: 0px;
+    border-spacing: 0px;
+    /* height: auto; */
+}
+/* ---------------------------------------------------------------------------------
+                               INDAVIDUAL ELEMENTS
+ ---------------------------------------------------------------------------------*/
+ 
+ /* <--- LISTS ---> */
+
+ QListWidget#lstJson
+ {
+     min-width: 550px;
+     font-family: Arial, Helvetica, sans-serif;
+     /* font-size: 16px;
+     font-weight: 600; */
+ } 
+ 
+ QListWidget#lstNodesNotSaved
+ {
+    min-width: 200px;
+
+    font-family: Arial, Helvetica, sans-serif;
+    /* font-size: 16px;
+    font-weight: 600; */
+    font-style: italic;
+ }
+ 
+ QListWidget#lstDeletedNodes
+ {
+    min-width: 200px;
+
+    font-family: Arial, Helvetica, sans-serif;
+    /* font-size: 14px; */
+    font-style: italic;
+ }
+
+  /* BUTTONS */
+
+  QPushButton#btn_updateListOrder
+  {
+      border: 1px solid #29a329;
+      border-radius: 5%;
+      background-color: transparent;
+      padding: 10px;
+
+      font-weight: 400;
+      font-size: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  QPushButton#btn_findChanges
+  {
+      border: 1px solid #ff6600;
+      border-radius: 5%;
+      background-color: transparent;
+      padding: 10px;
+
+      font-weight: 400;
+      font-size: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  QPushButton#btn_cacheAll
+  {
+      border: 1px solid #3399ff;
+      border-radius: 5%;
+      background-color: transparent;
+      padding: 10px; 
+
+      font-weight: 400;
+      font-size: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  QPushButton#btn_cacheSelected
+  {
+      border: 1px solid #0059b3;
+      border-radius: 5%;
+      background-color: transparent;
+      padding: 10px; 
+
+      font-weight: 400;
+      font-size: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+ /* <--- LABELS ---> */
+
+#lblJson, #lblNodesNotSaved, #lblNodesDeleted
+{
+    /* FONT */
+    font-size: 22px;
+    font-weight: 500;
+    font-weight: bold;
+    font-family: 'Courier New', Courier, monospace;
+
+    /* PADDING */
+    padding: 5px 0px 10px 0px;
+
+    /* COLOR */
+    color: white;
+}
+#lblJson
+{
+    color: #4db8ff;
+}
+
+#lblNodesNotSaved
+{
+    color: #ff944d;
+}
+
+#lblNodesDeleted
+{
+    color: #ff4d4d;
+}
+
+
+/* ---------------------------------------------------------------------------------
+                               EFFECTS
+ ---------------------------------------------------------------------------------*/
+/* HOVER  */
+        /* LISTS */
+QListWidget::item:hover
+{
+    padding: 2px;
+    font-size: 30px;
+    font-weight: 1000;
+}
+
+ QListWidget::item:hover#lstJson
+{
+    background-color: #b3e0ff;
+    color: #202020;
+}
+
+QListWidget::item:hover#lstNodesNotSaved
+{
+    background-color: #ffd1b3;
+    color: #202020;
+}
+
+QListWidget::item:hover#lstDeletedNodes
+{
+    background-color: #ffb3b3;
+    color: #202020;
+}
+
+        /* BUTTONS */
+QPushButton:hover#btn_updateListOrder
+{    
+    background-color: #29a329;
+
+    font-weight: 500;
+    font-size: 20px;
+}
+QPushButton:hover#btn_findChanges
+{
+    background-color: #ff6600;
+
+    font-weight: 500;
+    font-size: 20px;
+}
+
+QPushButton:hover#btn_cacheAll
+{
+    background-color: #3399ff;
+
+    font-weight: 500;
+    font-size: 20px;
+}
+
+QPushButton:hover#btn_cacheSelected
+{
+    background-color: #0059b3;
+
+    font-weight: 500;
+    font-size: 20px;
+}
+
+/* SELECTED */
+
+QListWidget::item:selected#lstJson
+{
+    background-color: #4db8ff;
+    color: #202020;
+}
+
+QListWidget::item:selected#lstNodesNotSaved
+{
+    background-color: #ff944d;
+    color: #202020;
+}
+
+QListWidget::item:selected#lstDeletedNodes
+{
+    background-color: #ff4d4d;
+    color: #202020;
 }
